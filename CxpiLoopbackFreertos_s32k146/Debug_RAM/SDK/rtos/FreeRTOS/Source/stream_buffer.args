@@ -2,8 +2,8 @@
 -DCPU_S32K146
 -DDEV_ERROR_DETECT
 -DUSING_OS_FREERTOS
--I"C:/Users/andre/workspaceS32DS.3.5/CxpiLoopbackFreertos_s32k146/src"
--I"C:/Users/andre/workspaceS32DS.3.5/CxpiLoopbackFreertos_s32k146/board"
+-I"C:/Users/andre/workspaceS32DS.3.5_2/CxpiLoopbackFreertos_s32k146/src"
+-I"C:/Users/andre/workspaceS32DS.3.5_2/CxpiLoopbackFreertos_s32k146/board"
 -I"C:/NXP/S32DS.3.5/S32DS/software/S32SDK_S32K1XX_RTM_4.0.1/rtos/FreeRTOS_S32K/Source/include"
 -I"C:/NXP/S32DS.3.5/S32DS/software/S32SDK_S32K1XX_RTM_4.0.1/rtos/FreeRTOS_S32K/Source/portable/GCC/ARM_CM4F"
 -I"C:/NXP/S32DS.3.5/S32DS/software/S32SDK_S32K1XX_RTM_4.0.1/platform/devices/S32K146/include"

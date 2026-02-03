@@ -87,7 +87,8 @@ void CxpiPWMCenterAlignInitRed(void);
 void CxpiPWMStopRed(void);
 void CxpiPWMStartRed(void);
 void CxpiPWMCenterAlignInitMotor(void);
-void CxpiPWMStartMotor(void);
-void CxpiPWMStopMotor(void);
+void CxpiPWMForceStartMotor(void);
+void CxpiPWMForceStopMotor(void);
+void CxpiPwmMotorSpeed(uint8_t DutyCycle, bool MirroredDutyCycle);
 
 #endif /* PWM_FTM_H_ */

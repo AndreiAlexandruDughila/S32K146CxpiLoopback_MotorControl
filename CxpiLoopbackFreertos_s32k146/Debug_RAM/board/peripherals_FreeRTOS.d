@@ -1,7 +1,7 @@
 board/peripherals_FreeRTOS.o: ../board/peripherals_FreeRTOS.c \
  ../board/peripherals_FreeRTOS.h \
  C:/NXP/S32DS.3.5/S32DS/software/S32SDK_S32K1XX_RTM_4.0.1/rtos/FreeRTOS_S32K/Source/include/FreeRTOS.h \
- C:/Users/andre/workspaceS32DS.3.5/CxpiLoopbackFreertos_s32k146/board/FreeRTOSConfig.h \
+ C:/Users/andre/workspaceS32DS.3.5_2/CxpiLoopbackFreertos_s32k146/board/FreeRTOSConfig.h \
  C:/NXP/S32DS.3.5/S32DS/software/S32SDK_S32K1XX_RTM_4.0.1/rtos/FreeRTOS_S32K/Source/include/projdefs.h \
  C:/NXP/S32DS.3.5/S32DS/software/S32SDK_S32K1XX_RTM_4.0.1/rtos/FreeRTOS_S32K/Source/include/portable.h \
  C:/NXP/S32DS.3.5/S32DS/software/S32SDK_S32K1XX_RTM_4.0.1/rtos/FreeRTOS_S32K/Source/include/deprecated_definitions.h \
@@ -12,7 +12,7 @@ board/peripherals_FreeRTOS.o: ../board/peripherals_FreeRTOS.c \
 
 C:/NXP/S32DS.3.5/S32DS/software/S32SDK_S32K1XX_RTM_4.0.1/rtos/FreeRTOS_S32K/Source/include/FreeRTOS.h:
 
-C:/Users/andre/workspaceS32DS.3.5/CxpiLoopbackFreertos_s32k146/board/FreeRTOSConfig.h:
+C:/Users/andre/workspaceS32DS.3.5_2/CxpiLoopbackFreertos_s32k146/board/FreeRTOSConfig.h:
 
 C:/NXP/S32DS.3.5/S32DS/software/S32SDK_S32K1XX_RTM_4.0.1/rtos/FreeRTOS_S32K/Source/include/projdefs.h:
 

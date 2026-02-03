@@ -78,6 +78,7 @@
 #include "sdk_project_config.h"
 #include "../include/Lpuart.h"
 #include "../include/Pwm_Ftm.h"
+#include "../include/Cxpi.h"
 
 #include "BoardDefines.h"
 
@@ -121,217 +122,35 @@ an interrupt on this port. */
 
 /*-----------------------------------------------------------*/
 
+ PORT_Type* PORTx[PORT_INSTANCE_COUNT] = {
+     PORTA, PORTB, PORTC, PORTD, PORTE
+ };
 
+ GPIO_Type* PTx[GPIO_INSTANCE_COUNT] = {
+     PTA, PTB, PTC, PTD, PTE
+ };
 
-void Pta11interruptHandler(void)
+ uint32_t PCC_PORTx_INDEX[PORT_INSTANCE_COUNT] = {
+     PCC_PORTA_INDEX,
+     PCC_PORTB_INDEX,
+     PCC_PORTC_INDEX,
+     PCC_PORTD_INDEX,
+     PCC_PORTE_INDEX
+ };
+
+typedef struct
 {
-    if (PORTA->ISFR & (1 << 11u))
-    {
-        /* ---- USER CODE HERE ---- */
-        /* Example: set a flag, toggle LED, etc. */
-
-        /* Clear interrupt flag */
-        PORTA->ISFR = (1 << 11u);
-    }
-}
+	isr_t NewHandler;
+	uint8_t Priority;
+} IrqInfoHandler;
 
 
-static inline void PTA11InterruptInit(void)
+typedef enum
 {
-    /* Enable clock for PORTA */
-    PCC->PCCn[PCC_PORTA_INDEX] |= PCC_PCCn_CGC_MASK;
-
-    /* Configure PTA11 as GPIO with interrupt */
-    PORTA->PCR[BTN_PIN] =
-          PORT_PCR_MUX(1)        /* GPIO */
-        | PORT_PCR_PE_MASK       /* Pull enable */
-        | PORT_PCR_PS_MASK       /* Pull-up */
-        | PORT_PCR_IRQC(0b1010); /* Interrupt on falling edge */
-
-    /* Set PTA11 as input */
-    PTA->PDDR &= ~(1 << 11u);
-
-    /* Clear any pending interrupt flag */
-    PORTA->ISFR = (1 << 11u);
-
-    /* Enable PORTA interrupt in NVIC */
-
-
-    INT_SYS_InstallHandler(PORTA_IRQn, Pta11interruptHandler, (isr_t *)NULL);
-    INT_SYS_SetPriority( PORTA_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 3);
-    NVIC_EnableIRQ(PORTA_IRQn);
-}
-
-
-void Pta17interruptHandler(void)
-{
-    if (PORTA->ISFR & (1 << 17u))
-    {
-        /* ---- USER CODE HERE ---- */
-        /* Example: set a flag, toggle LED, etc. */
-
-        /* Clear interrupt flag */
-        PORTA->ISFR = (1 << 17u);
-    }
-}
-
-
-static inline void PTA17InterruptInit(void)
-{
-    /* Enable clock for PORTA */
-    PCC->PCCn[PCC_PORTA_INDEX] |= PCC_PCCn_CGC_MASK;
-
-    /* Configure PTA11 as GPIO with interrupt */
-    PORTA->PCR[17u] =
-          PORT_PCR_MUX(1)        /* GPIO */
-        | PORT_PCR_PE_MASK       /* Pull enable */
-        | PORT_PCR_PS_MASK       /* Pull-up */
-        | PORT_PCR_IRQC(0b1010); /* Interrupt on falling edge */
-
-    /* Set PTA11 as input */
-    PTA->PDDR &= ~(1 << 17u);
-
-    /* Clear any pending interrupt flag */
-    PORTA->ISFR = (1 << 17u);
-
-    /* Enable PORTA interrupt in NVIC */
-
-
-    INT_SYS_InstallHandler(PORTA_IRQn, Pta11interruptHandler, (isr_t *)NULL);
-    INT_SYS_SetPriority( PORTA_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 4);
-    NVIC_EnableIRQ(PORTA_IRQn);
-}
-
-static inline void PTA27InitOutput(void)
-{
-    /* Enable clock for PORTA */
-    PCC->PCCn[PCC_PORTA_INDEX] |= PCC_PCCn_CGC_MASK;
-
-    /* Set PTA27 mux to GPIO */
-    PORTA->PCR[27u] = PORT_PCR_MUX(1);
-
-    /* Configure as output */
-    PTA->PDDR |= (1 << 27u);
-
-    /* Optional: start LOW */
-    PTA->PCOR = (1 << 27u);
-}
-
-static inline void PTA17SetHigh(void)
-{
-	PTA->PSOR = (1 << 27u);
-}
-
-
-static inline void PTA17SetLow(void)
-{
-	PTA->PCOR = (1 << 27u);
-}
-
-static inline void PTA17Toggle(void)
-{
-	PTA->PTOR = (1 << 27u);
-}
-
-
-static inline void PTD18InitOutput(void)
-{
-    /* Enable clock for PORTA */
-    PCC->PCCn[PCC_PORTD_INDEX] |= PCC_PCCn_CGC_MASK;
-
-    /* Set PTA27 mux to GPIO */
-    PORTD->PCR[18u] = PORT_PCR_MUX(1);
-
-    /* Configure as output */
-    PTD->PDDR |= (1 << 18u);
-
-    /* Optional: start LOW */
-    PTD->PCOR = (1 << 18u);
-}
-
-static inline void PTD18SetHigh(void)
-{
-	PTD->PSOR = (1 << 18u);
-}
-
-
-static inline void PTD18SetLow(void)
-{
-	PTD->PCOR = (1 << 18u);
-}
-
-static inline void PTD18Toggle(void)
-{
-	PTD->PTOR = (1 << 18u);
-}
-
-
-static inline void PTD15InitOutput(void)
-{
-    /* Enable clock for PORTD */
-    PCC->PCCn[PCC_PORTD_INDEX] |= PCC_PCCn_CGC_MASK;
-
-    /* Set PTA15 mux to GPIO */
-    PORTD->PCR[15u] = PORT_PCR_MUX(1);
-
-    /* Configure as output */
-    PTD->PDDR |= (1 << 15u);
-
-    /* Optional: start LOW */
-    PTD->PCOR = (1 << 15u);
-}
-
-static inline void PTD15SetHigh(void)
-{
-	PTD->PSOR = (1 << 15u);
-}
-
-
-static inline void PTD15SetLow(void)
-{
-	PTD->PCOR = (1 << 15u);
-}
-
-static inline void PTD15Toggle(void)
-{
-	PTD->PTOR = (1 << 15u);
-}
-
-
-
-static inline void PTD0InitOutput(void)
-{
-    /* Enable clock for PORTD */
-    PCC->PCCn[PCC_PORTD_INDEX] |= PCC_PCCn_CGC_MASK;
-
-    /* Set PTD0 mux to GPIO */
-    PORTD->PCR[0u] = PORT_PCR_MUX(1);
-
-    /* Configure as output */
-    PTD->PDDR |= (1 << 0u);
-
-    /* Optional: start LOW */
-    PTD->PCOR = (1 << 0u);
-}
-
-static inline void PTD0SetHigh(void)
-{
-	PTD->PSOR = (1 << 0u);
-}
-
-
-static inline void PTD0SetLow(void)
-{
-	PTD->PCOR = (1 << 0u);
-}
-
-static inline void PTD0Toggle(void)
-{
-	PTD->PTOR = (1 << 0u);
-}
-
-
-
+	MOTOR_STOPPED,
+	MOTOR_FORWARD,
+	MOTOR_REVERSE
+} CxpiMotorRotation;
 
 /*
  * Setup the NVIC, LED outputs, and button inputs.
@@ -347,20 +166,286 @@ static void CxpiSlaveTask(void *pvParameters);
 
 /*-----------------------------------------------------------*/
 
-/* The queue used by both tasks. */
-static QueueHandle_t xQueueCxpiRxMaster = NULL;
-/* The queue used by both tasks. */
-static QueueHandle_t xQueueCxpiRxUartSlave = NULL;
-/* The queue used by both tasks. */
-static QueueHandle_t xQueueCxpiRxSpiTableMaster = NULL;
-/* The queue used by both tasks. */
-static QueueHandle_t xQueueCxpiButtonMaster = NULL;
+/* The queue used by Master Task. */
+static QueueHandle_t xQueueCxpiUartRxMaster = NULL;
 
-/* The LED software timer.  This uses prvButtonLEDTimerCallback() as its callback
-function. */
-static TimerHandle_t xButtonLEDTimer = NULL;
+/* The queue used by Slave Task. */
+static QueueHandle_t xQueueCxpiUartRxSlave = NULL;
 
-/*-----------------------------------------------------------*/
+/* The queue used by Master Task. */
+static QueueHandle_t xQueueCxpiButton = NULL;
+
+/* The queue used by Master Task */
+static QueueHandle_t xQueueCxpiGpioInterruptMaster = NULL;
+
+/* The queue used by Slave Task. */
+static QueueHandle_t xQueueCxpiGpioInterruptSlave = NULL;
+
+Cxpi_Event EventMaster;
+Cxpi_Event EventSlave;
+
+extern uint8_t Cxpi_FrameTableMaster_Size;
+
+static void MasterPTA11InterruptHandler(void)
+{
+	static bool MasterInterrupt = false;
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    if (PORTA->ISFR & (1 << 11u))
+    {
+        /* ---- USER CODE HERE ---- */
+        /* Example: set a flag, toggle LED, etc. */
+
+        /* Clear interrupt flag */
+        PORTA->ISFR = (1 << 11u);
+
+		xQueueSendFromISR(
+			xQueueCxpiGpioInterruptMaster,
+			&MasterInterrupt,
+			&xHigherPriorityTaskWoken
+		);
+    }
+	portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
+}
+
+
+/* button */
+static void ButtonPTC13InterruptHandler(void)
+{
+	static bool ButtonPressed = false;
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    if (PORTC->ISFR & (1 << 13u))
+    {
+        /* ---- USER CODE HERE ---- */
+        /* Example: set a flag, toggle LED, etc. */
+
+        /* Clear interrupt flag */
+        PORTC->ISFR = (1 << 13u);
+
+		xQueueSendFromISR(
+			xQueueCxpiButton,
+			&ButtonPressed,
+			&xHigherPriorityTaskWoken
+		);
+    }
+	portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
+}
+
+
+static void SlavePTE16InterruptHandler(void)
+{
+	static bool SlaveInterrupt = false;
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    if (PORTE->ISFR & (1 << 16u))
+    {
+        /* ---- USER CODE HERE ---- */
+        /* Example: set a flag, toggle LED, etc. */
+
+        /* Clear interrupt flag */
+        PORTE->ISFR = (1 << 16u);
+
+		xQueueSendFromISR(
+			xQueueCxpiGpioInterruptSlave,
+			&SlaveInterrupt,
+			&xHigherPriorityTaskWoken
+		);
+    }
+	portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
+}
+
+
+
+const IrqInfoHandler IrqInfoButton =
+{
+	ButtonPTC13InterruptHandler,
+	5u
+};
+
+const IrqInfoHandler IrqInfoGpioMaster =
+{
+	MasterPTA11InterruptHandler,
+	3u
+};
+
+const IrqInfoHandler IrqInfoGpioSlave =
+{
+	SlavePTE16InterruptHandler,
+	4u
+};
+
+
+void GpioInputInterruptInit(const uint32_t Index, uint8_t Pin, IrqInfoHandler HandlerInfo, IRQn_Type IrqNumber)
+{
+    PCC->PCCn[PCC_PORTx_INDEX[Index]] |= PCC_PCCn_CGC_MASK;
+    PORT_Type* portx = (PORT_Type*)PORTx[Index];
+    GPIO_Type* ptx = (GPIO_Type*)PTx[Index];
+
+    /* Configure PTxPIN as GPIO with interrupt */
+    portx->PCR[Pin] =
+          PORT_PCR_MUX(1)        /* GPIO */
+        | PORT_PCR_PE_MASK       /* Pull enable */
+        | PORT_PCR_PS_MASK       /* Pull-up */
+        | PORT_PCR_IRQC(0b1010); /* Interrupt on falling edge */
+
+    /* Set PTx Pin as input */
+    ptx->PDDR &= ~(1 << 11u);
+
+    /* Clear any pending interrupt flag */
+    portx->ISFR = (1 << 11u);
+
+    INT_SYS_InstallHandler(IrqNumber, HandlerInfo.NewHandler, (isr_t *)NULL);
+    INT_SYS_SetPriority(IrqNumber, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + HandlerInfo.Priority);
+	INT_SYS_EnableIRQ(IrqNumber);
+}
+
+
+void GpioOutputInit(const uint32_t Index, uint8_t Pin)
+{
+    /* Enable clock for PORTx*/
+    PCC->PCCn[PCC_PORTx_INDEX[Index]] |= PCC_PCCn_CGC_MASK;
+    PORT_Type* portx = (PORT_Type*)PORTx[Index];
+    GPIO_Type* ptx = (GPIO_Type*)PTx[Index];
+
+    /* Set ptx pin mux to GPIO */
+    portx->PCR[Pin] = PORT_PCR_MUX(1);
+
+    /* Configure as output */
+    ptx->PDDR |= (1 << Pin);
+
+    /* Optional: start LOW */
+    ptx->PCOR = (1 << Pin);
+}
+
+
+void GpioOutputSetHigh(const uint32_t Index, uint8_t Pin)
+{
+    GPIO_Type* ptx = (GPIO_Type*)PTx[Index];
+	ptx->PSOR = (1 << Pin);
+}
+
+
+void GpioOutputSetLow(const uint32_t Index, uint8_t Pin)
+{
+    GPIO_Type* ptx = (GPIO_Type*)PTx[Index];
+	ptx->PCOR = (1 << Pin);
+}
+
+void GpioOutputToggle(const uint32_t Index, uint8_t Pin)
+{
+    GPIO_Type* ptx = (GPIO_Type*)PTx[Index];
+	ptx->PTOR = (1 << Pin);
+}
+
+
+
+static inline void MasterGpioInterruptDisable(void)
+{
+	INT_SYS_DisableIRQ(PORTA_IRQn);
+}
+
+static inline void MasterGpioInterruptEnable(void)
+{
+	INT_SYS_EnableIRQ(PORTA_IRQn);
+}
+
+static inline void SlaveGpioInterruptDisable(void)
+{
+	INT_SYS_DisableIRQ(PORTE_IRQn);
+}
+
+static inline void SlaveGpioInterruptEnable(void)
+{
+	INT_SYS_EnableIRQ(PORTE_IRQn);
+}
+
+
+static inline void MasterGpioInterruptInit(void)
+{
+	GpioInputInterruptInit(0u, 11u, IrqInfoGpioMaster, PORTA_IRQn);
+}
+
+static inline void SlaveGpioInterruptInit(void)
+{
+	GpioInputInterruptInit(4u, 16u, IrqInfoGpioSlave, PORTE_IRQn);
+}
+
+
+
+static inline void MasterEnableInit()
+{
+	GpioOutputInit(0u, 27u);
+}
+
+
+static inline void SlaveEnableInit(void)
+{
+	GpioOutputInit(0u, 28u);
+}
+
+static inline void SlaveEnable(void)
+{
+	GpioOutputSetHigh(0u, 28);
+}
+
+static inline void SlaveDisable(void)
+{
+	GpioOutputSetHigh(0u, 27);
+}
+
+
+static inline void MasterEnable()
+{
+	GpioOutputSetHigh(0u, 27u);
+}
+
+static inline void MasterDisable()
+{
+	GpioOutputSetLow(0u, 27u);
+}
+
+
+
+static inline void ButtonInit(void)
+{
+	GpioInputInterruptInit(2u, 13u, IrqInfoButton, PORTC_IRQn);
+	GpioOutputInit(3u, 0u);    /* Prepare Led */
+	GpioOutputSetHigh(3u, 0u); /* Set Led Pin High */
+}
+
+
+static void MotorInit(void)
+{
+	GpioOutputInit(3u, 30u);
+	GpioOutputSetHigh(3u, 30u);
+	GpioOutputInit(3u, 31u);
+	GpioOutputSetLow(3u, 31u);
+	CxpiPWMCenterAlignInitMotor();
+}
+
+
+static void MotorSpeed(uint8_t Speed, CxpiMotorRotation MotorRotation)
+{
+	if(MOTOR_STOPPED == MotorRotation)
+	{
+		CxpiPwmMotorSpeed(0u, false);
+		GpioOutputSetLow(2u, 31u);
+	}
+	else
+	if(MOTOR_REVERSE == MotorRotation)
+	{
+		CxpiPwmMotorSpeed(Speed, true);
+		GpioOutputSetHigh(2u, 31u);
+	}
+	if(MOTOR_FORWARD == MotorRotation)
+	{
+		CxpiPwmMotorSpeed(Speed, false);
+		GpioOutputSetLow(2u, 31u);
+	}
+	else
+	{
+
+	}
+}
 
 void rtos_start( void )
 {
@@ -368,21 +453,28 @@ void rtos_start( void )
 	prvSetupHardware();
 
 	/* Create the queue. */
-	xQueueCxpiRxMaster = xQueueCreate( 1u, sizeof( uint8_t ) );
-	/* Create the queue. */
-	xQueueCxpiRxUartSlave = xQueueCreate( 1u, sizeof( uint8_t ) );
-	/* Create the queue. */
-	xQueueCxpiRxSpiTableMaster = xQueueCreate( 1u, sizeof( uint8_t ) );
+	xQueueCxpiUartRxMaster = xQueueCreate( 1u, sizeof( uint8_t ) );
 
 	/* Create the queue. */
-	xQueueCxpiButtonMaster = xQueueCreate( 1u, sizeof( uint8_t ) );
+	xQueueCxpiUartRxSlave = xQueueCreate( 1u, sizeof( uint8_t ) );
+
+	/* Create the queue. */
+	xQueueCxpiButton = xQueueCreate( 1u, sizeof( uint8_t ) );
+
+	/* Create the queue. */
+	xQueueCxpiGpioInterruptMaster = xQueueCreate( 1u, sizeof( bool ) );
+
+	/* Create the queue. */
+	xQueueCxpiGpioInterruptSlave = xQueueCreate( 1u, sizeof( bool ) );
 
 
 
-	if(NULL != xQueueCxpiRxMaster &&
-	   NULL != xQueueCxpiRxUartSlave &&
-	   NULL != xQueueCxpiRxSpiTableMaster &&
-	   NULL != xQueueCxpiButtonMaster)
+
+	if(NULL != xQueueCxpiUartRxMaster &&
+	   NULL != xQueueCxpiUartRxSlave &&
+	   NULL != xQueueCxpiGpioInterruptMaster &&
+	   NULL != xQueueCxpiGpioInterruptSlave &&
+	   NULL != xQueueCxpiButton)
 	{
 		(void)xTaskCreate(CxpiMasterTask, "CXPI Master Task", 512, NULL, mainQUEUE_Master_TASK_PRIORITY, NULL);
 		(void)xTaskCreate(CxpiSlaveTask, "CXPI Slave Task", 512, NULL, mainQUEUE_Slave_TASK_PRIORITY, NULL);
@@ -412,7 +504,7 @@ void vLpuart0_ISRHandler( void )
 		rxByte = (uint8_t)LPUART0->DATA;
 
 		xQueueSendFromISR(
-			xQueueCxpiRxMaster,
+			xQueueCxpiUartRxMaster,
 			&rxByte,
 			&xHigherPriorityTaskWoken
 		);
@@ -435,7 +527,7 @@ void vLpuart2_ISRHandler( void )
 		rxByte = (uint8_t)LPUART2->DATA;
 
 		xQueueSendFromISR(
-			xQueueCxpiRxUartSlave,
+			xQueueCxpiUartRxSlave,
 			&rxByte,
 			&xHigherPriorityTaskWoken
 		);
@@ -449,18 +541,76 @@ void vLpuart2_ISRHandler( void )
 static void CxpiMasterTask(void *pvParameters)
 {
 	static uint8_t rxByte;
+	static bool ButtonPressed;
+
+	uint8_t LedLightCnt = 0u;
+	uint8_t BtnCnt = 0u;
+	bool Init = false;
+
 
 	for (;;)
 	{
-		if (xQueueReceive(xQueueCxpiRxMaster, &rxByte, pdMS_TO_TICKS(10)) == pdPASS)
+		if (xQueueReceive(xQueueCxpiUartRxMaster, &rxByte, pdMS_TO_TICKS(10)) == pdPASS)
 		{
+			CxpiProcessRxByte(rxByte, MASTER_NODE);
+			if(CXPI_TX_INDICATION == EventMaster)
+			{
+
+			}
+			else
+			if(CXPI_RX_INDICATION == EventMaster)
+			{
+
+			}
+		}
+
+		if(xQueueReceive(xQueueCxpiButton, &ButtonPressed, pdMS_TO_TICKS(10)) == pdPASS)
+		{
+			if(false == Init)
+			{
+				Init = true;
+				/*
+				MasterEnableInit();
+				SlaveEnableInit();
+				MasterEnable();
+				SlaveEnable();
+				*/
+			}
+			else
+			{
+				if(LedLightCnt > 5u)
+				{
+					CxpiSendFrame(BtnCnt, MASTER_NODE);
+					BtnCnt++;
+					if(BtnCnt == Cxpi_FrameTableMaster_Size)
+					{
+						BtnCnt = 0;
+					}
+					else
+					{
+
+					}
+				}
+			}
 
 		}
-		CxpiPWMStop();
-		vTaskDelay(pdMS_TO_TICKS(1000));
-		Lpuart_SendData(0, 0x55);
-		CxpiPWMStart();
-		PTD0Toggle();
+
+		if(true == Init)
+		{
+			if(LedLightCnt <= 5u)
+			{
+				vTaskDelay(pdMS_TO_TICKS(200));
+				/*
+					GpioOutputToggle(0u, 27u);
+					GpioOutputToggle(0u, 25u);
+					GpioOutputToggle(3u, 0u);
+				*/
+				GpioOutputToggle(0u, 25u);
+
+				LedLightCnt++;
+			}
+		}
+
 	}
 }
 
@@ -470,12 +620,20 @@ static void CxpiSlaveTask(void *pvParameters)
 
 	for (;;)
 	{
-		if (xQueueReceive(xQueueCxpiRxUartSlave, &rxByte, pdMS_TO_TICKS(10)) == pdPASS)
+		if (xQueueReceive(xQueueCxpiUartRxSlave, &rxByte, pdMS_TO_TICKS(10)) == pdPASS)
 		{
+			CxpiProcessRxByte(rxByte, SLAVE_NODE);
+			if(CXPI_TX_INDICATION == EventMaster)
+			{
 
+			}
+			else
+			if(CXPI_RX_INDICATION == EventMaster)
+			{
+
+			}
 		}
 		vTaskDelay(pdMS_TO_TICKS(10));
-		Lpuart_SendData(2, 0x55);
 	}
 }
 
@@ -498,8 +656,8 @@ static void prvSetupHardware( void )
 	PORTB->PCR[1] |= PORT_PCR_MUX(2);                 /* Port B1: MUX = ALT2, UART0 TX */
 
 	PCC->PCCn[PCC_PORTD_INDEX] |= PCC_PCCn_CGC_MASK;  /* Enable clock for PORTD */
-	PORTD->PCR[6] |= PORT_PCR_MUX(2);                 /* Port D6: MUX = ALT2, UART2 TX */
-	PORTD->PCR[7] |= PORT_PCR_MUX(2);                 /* Port D7: MUX = ALT2, UART2 RX */
+	PORTD->PCR[6] |= PORT_PCR_MUX(2);                 /* Port D6: MUX = ALT2, UART2 RX */
+	PORTD->PCR[7] |= PORT_PCR_MUX(2);                 /* Port D7: MUX = ALT2, UART2 TX */
 
 
     INT_SYS_InstallHandler(LPUART0_RxTx_IRQn, vLpuart0_ISRHandler, (isr_t *)NULL);
@@ -514,13 +672,34 @@ static void prvSetupHardware( void )
 
     Lpuart_Init(0U, 19200U, 11U);
     Lpuart_Init(2U, 19200U, 11U);
-    PTD0InitOutput();
-    PTD0SetHigh();
-    CxpiPWMCenterAlignInit();
-    CxpiPWMCenterAlignInitMotor();
-	CxpiPWMStartMotor();
-    CxpiPWMCenterAlignInitMotor1();
-	CxpiPWMStartMotor1();
+
+
+	MasterEnableInit();
+	MasterEnable();
+	SlaveEnableInit();
+	SlaveEnable();
+
+
+	GpioOutputInit(0u, 25u);
+	GpioOutputSetHigh(0u, 25u);
+
+	for(volatile uint32_t x = 0u; x <= 21000; x++)
+	{
+		x++;
+	}
+
+
+
+	for(volatile uint32_t x = 0u; x <= 21000; x++)
+	{
+		x++;
+	}
+
+
+	CxpiPWMCenterAlignInit();
+	CxpiPWMStart();
+
+	GpioInputInterruptInit(2u, 13u, IrqInfoButton, PORTC_IRQn);
 
 
 }

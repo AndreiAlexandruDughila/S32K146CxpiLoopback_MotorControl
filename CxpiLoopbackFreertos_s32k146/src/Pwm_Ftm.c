@@ -305,7 +305,7 @@ void CxpiPWMCenterAlignInitMotor(void)
 	/* High-true pulses of PWM signals */
 	FTM0->CONTROLS[0].CnSC = FTM_CnSC_ELSB_MASK;
 	/* Set Channel Value */
-	FTM0->CONTROLS[0].CnV = FTM_CnV_VAL(600); // 50% duty cycle
+	FTM0->CONTROLS[0].CnV = FTM_CnV_VAL(0u); // 50% duty cycle
 	/* FTM counter reset */
 	FTM0->CNT = 0;
 
@@ -314,7 +314,7 @@ void CxpiPWMCenterAlignInitMotor(void)
 }
 
 
-void CxpiPWMStopMotor(void)
+void CxpiPWMForceStopMotor(void)
 {
 	/* Clock selection stop and disable PWM generation */
 	FTM0->SC &= ~ (FTM_SC_PWMEN0_MASK);
@@ -322,8 +322,26 @@ void CxpiPWMStopMotor(void)
 
 
 
-void CxpiPWMStartMotor(void)
+void CxpiPWMForceStartMotor(void)
 {
 	/* Clock selection and enabling PWM generation */
 	FTM0->SC |= FTM_SC_PWMEN0_MASK;
+}
+
+
+void CxpiPwmMotorSpeed(uint8_t DutyCycle, bool MirroredDutyCycle)
+{
+	uint32_t mod = FTM0->MOD;
+	uint32_t cnv;
+
+	if(true == MirroredDutyCycle)
+	{
+		cnv = (uint32_t)(((100 - DutyCycle) * mod) / 100);
+	}
+	else
+	{
+		cnv = (uint32_t)((DutyCycle * mod) / 100);
+	}
+	FTM0->CONTROLS[0].CnV = FTM_CnV_VAL(cnv);
+
 }

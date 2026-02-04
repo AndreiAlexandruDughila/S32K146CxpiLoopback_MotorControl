@@ -415,10 +415,10 @@ static inline void ButtonInit(void)
 
 static void MotorInit(void)
 {
-	GpioOutputInit(3u, 30u);
-	GpioOutputSetHigh(3u, 30u);
-	GpioOutputInit(3u, 31u);
-	GpioOutputSetLow(3u, 31u);
+	GpioOutputInit(2u, 30u);
+	GpioOutputSetHigh(2u, 30u);
+	GpioOutputInit(2u, 31u);
+	GpioOutputSetLow(2u, 31u);
 	CxpiPWMCenterAlignInitMotor();
 }
 
@@ -445,6 +445,11 @@ static void MotorSpeed(uint8_t Speed, CxpiMotorRotation MotorRotation)
 	{
 
 	}
+}
+
+static void MotorControl(void)
+{
+	MotorSpeed(DutyCycle, (CxpiMotorRotation)Direction);
 }
 
 void rtos_start( void )
@@ -503,6 +508,7 @@ void vLpuart0_ISRHandler( void )
 	{
 		rxByte = (uint8_t)LPUART0->DATA;
 
+
 		xQueueSendFromISR(
 			xQueueCxpiUartRxMaster,
 			&rxByte,
@@ -525,6 +531,7 @@ void vLpuart2_ISRHandler( void )
 	if (LPUART2->STAT & LPUART_STAT_RDRF_MASK)
 	{
 		rxByte = (uint8_t)LPUART2->DATA;
+
 
 		xQueueSendFromISR(
 			xQueueCxpiUartRxSlave,
@@ -550,7 +557,7 @@ static void CxpiMasterTask(void *pvParameters)
 
 	for (;;)
 	{
-		if (xQueueReceive(xQueueCxpiUartRxMaster, &rxByte, pdMS_TO_TICKS(10)) == pdPASS)
+		if (xQueueReceive(xQueueCxpiUartRxMaster, &rxByte, pdMS_TO_TICKS(0x10)) == pdPASS)
 		{
 			CxpiProcessRxByte(rxByte, MASTER_NODE);
 			if(CXPI_TX_INDICATION == EventMaster)
@@ -564,7 +571,7 @@ static void CxpiMasterTask(void *pvParameters)
 			}
 		}
 
-		if(xQueueReceive(xQueueCxpiButton, &ButtonPressed, pdMS_TO_TICKS(10)) == pdPASS)
+		if(xQueueReceive(xQueueCxpiButton, &ButtonPressed, pdMS_TO_TICKS(0x10)) == pdPASS)
 		{
 			if(false == Init)
 			{
@@ -620,7 +627,7 @@ static void CxpiSlaveTask(void *pvParameters)
 
 	for (;;)
 	{
-		if (xQueueReceive(xQueueCxpiUartRxSlave, &rxByte, pdMS_TO_TICKS(10)) == pdPASS)
+		if (xQueueReceive(xQueueCxpiUartRxSlave, &rxByte, pdMS_TO_TICKS(0x100)) == pdPASS)
 		{
 			CxpiProcessRxByte(rxByte, SLAVE_NODE);
 			if(CXPI_TX_INDICATION == EventMaster)
@@ -630,10 +637,10 @@ static void CxpiSlaveTask(void *pvParameters)
 			else
 			if(CXPI_RX_INDICATION == EventMaster)
 			{
-
+				MotorControl();
+				EventMaster = CXPI_NO_INDICATION;
 			}
 		}
-		vTaskDelay(pdMS_TO_TICKS(10));
 	}
 }
 
@@ -670,8 +677,8 @@ static void prvSetupHardware( void )
     INT_SYS_SetPriority( LPUART0_RxTx_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
     INT_SYS_SetPriority( LPUART2_RxTx_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 2);
 
-    Lpuart_Init(0U, 19200U, 11U);
-    Lpuart_Init(2U, 19200U, 11U);
+    Lpuart_Init(0U, 19600, 15U);
+    Lpuart_Init(2U, 19600, 15U);
 
 
 	MasterEnableInit();
@@ -698,6 +705,7 @@ static void prvSetupHardware( void )
 
 	CxpiPWMCenterAlignInit();
 	CxpiPWMStart();
+	MotorInit();
 
 	GpioInputInterruptInit(2u, 13u, IrqInfoButton, PORTC_IRQn);
 

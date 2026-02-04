@@ -88,7 +88,14 @@ void Lpuart_SendData(const uint8_t Instance, const uint8_t Data)
 	LPUART_Type* const BasePtr = (LPUART_Type* const)LpuartBasePtr[Instance];
 	while((BasePtr->STAT & LPUART_STAT_TDRE_MASK)>>LPUART_STAT_TDRE_SHIFT==0);
 	                                   /* Wait for transmit buffer to be empty */
+
+    /* Wait for TX buffer empty */
+    while (!(BasePtr->STAT & LPUART_STAT_TDRE_MASK));
+
 	BasePtr->DATA=Data;                /* Send data */
+
+    /* Wait for transmission complete */
+    while (!(BasePtr->STAT & LPUART_STAT_TC_MASK));
 }
 
 
@@ -99,6 +106,7 @@ uint8_t Lpuart_GetData(const uint8_t Instance)
 	while((BasePtr->STAT & LPUART_STAT_RDRF_MASK)>>LPUART_STAT_RDRF_SHIFT==0);
 	                                     /* Wait for received buffer to be full */
 	ReceiveData= BasePtr->DATA;          /* Read received data*/
+	while((BasePtr->STAT & LPUART_STAT_RDRF_MASK)>>LPUART_STAT_RDRF_SHIFT==0);
 	return ReceiveData;
 }
 

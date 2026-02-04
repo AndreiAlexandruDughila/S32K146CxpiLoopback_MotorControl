@@ -24,6 +24,10 @@ static uint8_t Cxpi_Frame1_DataSlave[2];
 static uint8_t Cxpi_Frame2_DataSlave[2];
 static uint8_t Cxpi_Frame3_DataSlave[1];
 
+
+uint8_t Direction;
+uint8_t DutyCycle;
+
 /* Frame table (RAM, FLASH) */
 Cxpi_FrameTableEntry_t Cxpi_FrameTableMaster[CXPI_FRAME_TABLE_MAX_ENTRIES] =
 {
@@ -40,10 +44,10 @@ Cxpi_FrameTableEntry_t Cxpi_FrameTableSlave[CXPI_FRAME_TABLE_MAX_ENTRIES] =
 {
     /* Initial entries */
 	/* Initial entries */
-	{ 0x22, 0x02u, CXPI_FRAME_RX, Cxpi_Frame0_DataSlave },
-	{ 0x23, 0x02u, CXPI_FRAME_RX, Cxpi_Frame1_DataSlave },
-	{ 0x24, 0x02u, CXPI_FRAME_RX, Cxpi_Frame2_DataSlave },
-	{ 0x25, 0x01u, CXPI_FRAME_RX, Cxpi_Frame3_DataSlave }
+	{ 0x22u, 0x02u, CXPI_FRAME_RX, Cxpi_Frame0_DataSlave },
+	{ 0x23u, 0x02u, CXPI_FRAME_RX, Cxpi_Frame1_DataSlave },
+	{ 0x24u, 0x02u, CXPI_FRAME_RX, Cxpi_Frame2_DataSlave },
+	{ 0x25u, 0x01u, CXPI_FRAME_RX, Cxpi_Frame3_DataSlave }
 };
 
 /* Current number of valid entries */
@@ -100,11 +104,12 @@ Cxpi_FrameTableEntry_t* Cxpi_FrameTable_FindByPid(uint8_t pid, Cxpi_Node_t nodet
 	Cxpi_FrameTableEntry_t* TableEntry = (void*)0u;
 	if(nodetype == MASTER_NODE)
 	{
-	    for (uint8_t i = 0; i < Cxpi_FrameTableMaster_Size; i++)
+	    for (volatile uint8_t i = 0; i < Cxpi_FrameTableMaster_Size; i++)
 	    {
 	        if (Cxpi_FrameTableMaster[i].pid == pid)
 	        {
 	        	TableEntry = &Cxpi_FrameTableMaster[i];
+	        	break;
 	        }
 	    }
 
@@ -112,18 +117,15 @@ Cxpi_FrameTableEntry_t* Cxpi_FrameTable_FindByPid(uint8_t pid, Cxpi_Node_t nodet
 	else
 	if(nodetype == SLAVE_NODE)
 	{
-
-	}
-    for (uint8_t i = 0; i < Cxpi_FrameTableSlave_Size; i++)
-    {
-	    for (uint8_t i = 0; i < Cxpi_FrameTableSlave_Size; i++)
+	    for (volatile uint8_t i = 0; i < Cxpi_FrameTableSlave_Size; i++)
 	    {
 	        if (Cxpi_FrameTableSlave[i].pid == pid)
 	        {
 	        	TableEntry = &Cxpi_FrameTableSlave[i];
+	        	break;
 	        }
 	    }
-    }
+	}
     return TableEntry;
 }
 
@@ -197,6 +199,7 @@ void CxpiProcessRxByte(uint8_t RxByte, Cxpi_Node_t nodetype)
 	Cxpi_Node_Status* NodeStatus = (void*)0u;
 	Cxpi_FrameTableEntry_t* TableEntry;
 	uint8_t Info;
+	volatile uint8_t aaaa;
 	if(nodetype == MASTER_NODE && (void*)0u != Cxpi_FrameTableMaster)
 	{
 		NodeStatus = &CxpiMasterNode;
@@ -215,10 +218,17 @@ void CxpiProcessRxByte(uint8_t RxByte, Cxpi_Node_t nodetype)
 		case CXPI_NO_PENDING:
 		case CXPI_IDLE:
 		{
-			TableEntry = Cxpi_FrameTable_FindByPid(RxByte & 0x7F, nodetype);
+
+			TableEntry = Cxpi_FrameTable_FindByPid(RxByte, nodetype);
+			if((void*)0 == TableEntry)
+			{
+				aaaa = RxByte;
+				PTA->PTOR = (1 << 25);
+			}
 			NodeStatus->CurrentFrame.pid = TableEntry->pid;
 			NodeStatus->CurrentFrame.data = TableEntry->data;
-
+			NodeStatus->RxPending = true;
+			NodeStatus->TxPending = false;
 			NodeStatus->FrameNodeStatus = CXPI_WAIT_INFO;
 
 			break;
@@ -227,9 +237,9 @@ void CxpiProcessRxByte(uint8_t RxByte, Cxpi_Node_t nodetype)
 		{
 			if(NodeStatus->TxPending)
 			{
-				PTA->PTOR = (1 << 25);
-				Info = (NodeStatus->CurrentFrame.dlc << 4u) | (NodeStatus->CurrentFrame.nm << 2u) | (NodeStatus->CurrentFrame.ct);
-				Lpuart_SendData(NodeStatus->LpuartInstance, Info);
+
+				Info = ((uint8_t)(NodeStatus->CurrentFrame.dlc & 0xff) << 4u) | (uint8_t)((NodeStatus->CurrentFrame.nm << 2u)& 0xff) | (uint8_t)((NodeStatus->CurrentFrame.ct) & 0x0ff);
+				Lpuart_SendData(NodeStatus->LpuartInstance, (const uint8_t)Info);
 				NodeStatus->FrameNodeStatus = CXPI_WAIT_INFO;
 			}
 			else
@@ -259,6 +269,8 @@ void CxpiProcessRxByte(uint8_t RxByte, Cxpi_Node_t nodetype)
 			else
 			if(NodeStatus->RxPending)
 			{
+				aaaa = RxByte;
+				PTA->PTOR = (1 << 25);
 				NodeStatus->CurrentFrame.dlc = (RxByte >> 4u);
 				NodeStatus->CurrentFrame.nm = (RxByte >> 2u) & 0x03u;
 				NodeStatus->CurrentFrame.ct = (RxByte) & 0x03u;
@@ -297,7 +309,6 @@ void CxpiProcessRxByte(uint8_t RxByte, Cxpi_Node_t nodetype)
 			else
 			if(NodeStatus->RxPending)
 			{
-
 				NodeStatus->CurrentFrame.data[NodeStatus->ByteCnt] = RxByte;
 				NodeStatus->ByteCnt++;
 				if(NodeStatus->ByteCnt < NodeStatus->CurrentFrame.dlc)
@@ -339,7 +350,8 @@ void CxpiProcessRxByte(uint8_t RxByte, Cxpi_Node_t nodetype)
 			if(NodeStatus->RxPending)
 			{
 				NodeStatus->CurrentFrame.crc = RxByte;
-
+				aaaa = RxByte;
+				PTA->PTOR = (1 << 25);
 				NodeStatus->ByteCnt = 0u;
 				NodeStatus->IdleBus = true;
 				NodeStatus->TxPending = false;
@@ -352,6 +364,11 @@ void CxpiProcessRxByte(uint8_t RxByte, Cxpi_Node_t nodetype)
 				else
 				{
 					EventSlave = CXPI_RX_INDICATION;
+					Direction = NodeStatus->CurrentFrame.data[0];
+					if(Direction > 0u)
+					{
+						DutyCycle = NodeStatus->CurrentFrame.data[1];
+					}
 				}
 			}
 		}
@@ -390,8 +407,8 @@ void CxpiSendFrame(uint8_t IndexFrame, Cxpi_Node_t nodetype)
 			IndexFrame = 0u;
 			index = 0u;
 		}
-
-		NodeStatus->CurrentFrame.pid = CxpiComputeParity(Cxpi_FrameTableMaster[index].pid, COMPUTE_PARITY);
+		NodeStatus->CurrentFrame.pid = Cxpi_FrameTableMaster[index].pid;
+		//NodeStatus->CurrentFrame.pid = CxpiComputeParity(Cxpi_FrameTableMaster[index].pid, COMPUTE_PARITY);
 		NodeStatus->CurrentFrame.dlc = Cxpi_FrameTableMaster[index].datalength;
 		NodeStatus->CurrentFrame.nm = 0u;
 		NodeStatus->CurrentFrame.ct = 0u;
@@ -402,6 +419,10 @@ void CxpiSendFrame(uint8_t IndexFrame, Cxpi_Node_t nodetype)
 		NodeStatus->RxPending = false;
 		NodeStatus->FrameNodeStatus = CXPI_WAIT_ID;
 		Lpuart_SendData(NodeStatus->LpuartInstance, NodeStatus->CurrentFrame.pid);
+		for(volatile uint16_t x=0u; x<16000u; x++)
+		{
+
+		}
 	}
 	else
     if(nodetype == SLAVE_NODE && (NodeStatus->IdleBus == true) && (NodeStatus->TxPending != true) && (NodeStatus->RxPending != true))

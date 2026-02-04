@@ -12,7 +12,7 @@
 #include "S32K146.h"
 #include "stdbool.h"
 #include "stddef.h"
-
+#include "../include/Lpuart.h"
 
 typedef enum
 {
@@ -44,13 +44,17 @@ typedef struct
 /* Maximum allowed entries */
 #define CXPI_FRAME_TABLE_MAX_ENTRIES  0xFu
 
+
+#define ARBITRATION_TEST false
+
 /* Runtime-modifiable frame table */
 extern Cxpi_FrameTableEntry_t Cxpi_FrameTable[];
 
 /* Current number of entries */
 extern uint8_t Cxpi_FrameTable_Size;
 
-
+extern uint8_t Direction;
+extern uint8_t DutyCycle;
 
 typedef enum
 {
